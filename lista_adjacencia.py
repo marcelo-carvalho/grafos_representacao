@@ -7,6 +7,7 @@
 # gentileza se certificar de que a mesma incranta-se disponível 
 
 
+import queue
 from tkinter import * 
 from tkinter import filedialog
 from tkinter import messagebox
@@ -24,17 +25,6 @@ class Grafo:
     def adiciona_aresta(self, vertice_1, vertice_2):
         self.c_lista_adj[vertice_1].add(vertice_2)                                  #adiciona elemento na lista de sucessores
         self.c_lista_adj_ant[vertice_2].add(vertice_1)                              #adiciona elemento na lista de antecessores
-
-    #metódo para visualização dos pares de arestas
-    #def print_lista(self):
-    #    for key in self.c_lista_adj.keys():
-    #        print("Vértice", key, ": ",self.c_lista_adj[key])
-
-    # Metódo para visualização dos resultados em prompt de comandos
-    #def print_vertice(self, vertice):
-    #    print("Sucessores", vertice, ":", self.c_lista_adj[vertice])
-    #    print("Antecessores", vertice, ":", self.c_lista_adj_ant[vertice])
-    #    print("Grau: ",len(self.c_lista_adj[vertice]))
 
     #pega elemento sucessores de um vértice
     def get_sucessores(self,vertice):
@@ -71,6 +61,34 @@ class Grafo:
             return len(self.c_lista_adj_ant[vertice])
         except:
             raise Exception("Valor inválido ou fora dos limites do grafo.")     #exceção para valor inválido
+    
+    #Busca em Profundidade 
+    def busca_profundidade(self,vertice,visitados):
+        visitados.append(vertice)                                               #Inicia pilha com vértice escolhido pelo usuário
+        for vizinho in self.c_lista_adj[vertice]:
+            if vizinho not in visitados:
+                self.busca_profundidade(vizinho,visitados)
+
+    #Busca e Largura
+    def busca_largura(self,vertice,visitados):
+        fila = [vertice]                                                        #Inicia fila com vértice escolhido pelo usuário
+        while fila:
+            visitar = fila.pop(0)
+            if visitar not in visitados:
+                visitados.append(visitar)
+                vizinhos = list(self.get_sucessores(visitar))
+                fila.extend(vizinhos)
+    
+    #Encontra caminho
+    def encontra_caminho(self,vertice_inicial, vertice_final, visitados):
+        visitados.append(vertice_inicial)
+        for vizinho in self.c_lista_adj[vertice_inicial]:
+            if vertice_final not in visitados:
+                self.encontra_caminho(vizinho,vertice_final,visitados)
+            else:
+                visitados.append(vertice_final)    
+                break
+
 
 #Classe para geração da janela 
 class Tela:
@@ -83,7 +101,7 @@ class Tela:
         self.frame_cima = Frame(self.mainTela).grid()
         self.frame_baixo = Frame(self.mainTela).grid()
 
-        # Crio um título
+        # Cria um título
         self.lableTitulo = Label(self.frame_cima, text="Atividade 1 - Representação de Grafos")
         self.lableTitulo.grid(column=2, row=1)
         
@@ -106,6 +124,33 @@ class Tela:
         self.botaoCarregar = Button(self.frame_cima, text="Buscar", command=self.busca_vertice)
         self.botaoCarregar.grid(column=3, row=4,sticky="W")
 
+        #Widgets para busca em profundidade
+        self.labelBuscaProfundidade = Label(self.frame_cima, text="Vértice: ")
+        self.labelBuscaProfundidade.grid(column=1,row=14,stick="W")
+        self.entryBuscaProfundidade = Entry(self.frame_cima)
+        self.entryBuscaProfundidade.grid(column=2,row=14,stick="W")
+        self.botaoBuscaProfundidade = Button(self.frame_cima, text="Busca Profundidade", command=self.busca_profundidade)
+        self.botaoBuscaProfundidade.grid(column=3,row=14)
+
+        #Widgets para busca em largura
+        self.labelBuscaLargura = Label(self.frame_cima, text="Vértice: ")
+        self.labelBuscaLargura.grid(column=1,row=16,stick="W")
+        self.entryBuscaLargura = Entry(self.frame_cima)
+        self.entryBuscaLargura.grid(column=2,row=16,stick="W")
+        self.botaoBuscaLargura = Button(self.frame_cima, text="Busca Largura", command=self.busca_largura)
+        self.botaoBuscaLargura.grid(column=3,row=16)
+
+        #Widgets para buscar caminho
+        self.labelBuscaCaminho_1 = Label(self.frame_cima, text="Vértice Inicial: ")
+        self.labelBuscaCaminho_1.grid(column=1,row=17,stick="W")
+        self.entryBuscaCaminho_1 = Entry(self.frame_cima)
+        self.entryBuscaCaminho_1.grid(column=2,row=17,stick="W")
+        self.labelBuscaCaminho_2 = Label(self.frame_cima, text="Vértice Final: ")
+        self.labelBuscaCaminho_2.grid(column=1,row=18,stick="W")
+        self.entryBuscaCaminho_2 = Entry(self.frame_cima)
+        self.entryBuscaCaminho_2.grid(column=2,row=18,stick="W")
+        self.botaoBuscaCaminho = Button(self.frame_cima, text="Busca Caminho", command=self.busca_caminho)
+        self.botaoBuscaCaminho.grid(column=2,row=19)
 
         # Widgets para apresentação dos Resultados
         self.Resultados = Label(self.frame_baixo, text="Resultados")
@@ -168,6 +213,40 @@ class Tela:
         
         except Exception as e:
             messagebox.showerror("Erro",e)                                                      #cria janela de erro
+
+    # Metódo para chamar a busca em profundidade
+    def busca_profundidade(self):
+        try:
+            if self.arquivo_importado == False:
+                raise Exception("Arquivo não importado")                                        #Gera exceção quando grafo não for importado
+            visitados = list()                                                                  #Cria lista com a ordem de visitas
+            self.graph.busca_profundidade(int(self.entryBuscaProfundidade.get()),visitados)     #Chama o algoritmo de busca em profundidade
+            print(visitados)                                                                    #Exibe os resultados
+        except Exception as e:
+            messagebox.showerror("Erro", e)                                                     #Cria janela de erro
+        
+    # Metódo para chamar a busca em largura
+    def busca_largura(self):
+        try:
+            if self.arquivo_importado == False:
+                raise Exception("Arquivo não importado")                                        #Gera exceção quando grafo não for importado
+            visitados = list()                                                                  #Gera lista com a ordem de visitas
+            self.graph.busca_largura(int(self.entryBuscaLargura.get()),visitados)               #Chama o algoritmo de busca em largura
+            print(visitados)                                                                    #Exibe os resultados
+        except Exception as e:
+            messagebox.showerror("Erro",e)                                                      #Cria janela de erro
+
+    def busca_caminho(self):
+        try:
+            if self.arquivo_importado == False:
+                raise Exception("Arquivo não importado")
+            visitados = list()
+            self.graph.encontra_caminho(int(self.entryBuscaCaminho_1.get()),
+                                        int(self.entryBuscaCaminho_2.get()),
+                                        visitados)
+            print(visitados)
+        except Exception as e:
+            messagebox.showerror("Erro",e)
 
 janela  = Tk()
 Tela(janela)

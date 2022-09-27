@@ -7,6 +7,7 @@
 # gentileza se certificar de que a mesma incranta-se disponível 
 
 
+from collections import deque
 import queue
 from tkinter import * 
 from tkinter import filedialog
@@ -62,6 +63,12 @@ class Grafo:
         except:
             raise Exception("Valor inválido ou fora dos limites do grafo.")     #exceção para valor inválido
     
+    def get_num_vertices(self):
+        return int(self.c_num_vertices)
+
+    def get_vertices(self):
+        return self.c_lista_adj
+    
     #Busca em Profundidade 
     def busca_profundidade(self,vertice,visitados):
         visitados.append(vertice)                                               #Inicia pilha com vértice escolhido pelo usuário
@@ -79,15 +86,56 @@ class Grafo:
                 vizinhos = list(self.get_sucessores(visitar))
                 fila.extend(vizinhos)
     
-    #Encontra caminho
-    def encontra_caminho(self,vertice_inicial, vertice_final, visitados):
-        visitados.append(vertice_inicial)
-        for vizinho in self.c_lista_adj[vertice_inicial]:
-            if vertice_final not in visitados:
-                self.encontra_caminho(vizinho,vertice_final,visitados)
-            else:
-                visitados.append(vertice_final)    
-                break
+    def encontra_caminho(self,node1,node2,path=[]):
+        
+        if node1 and node2 not in self.get_vertices():
+            return None
+        if(node2 in path):
+            return path
+        else:
+            path.append(node1)
+        for vizinho in self.c_lista_adj[node1]:
+            if vizinho not in path:
+                self.encontra_caminho(vizinho,node2,path)
+        return path
+
+    def encontra_caminho_quase(self,src, dest):
+        n = self.get_num_vertices()
+        discovered = [False] * n
+        q = deque()
+        discovered[src] = True
+        q.append(src)
+
+        while q:
+            v = q.popleft()
+            if v == dest:
+                return True
+
+            for u in self.c_lista_adj[v]:
+                if not discovered[u]:
+                    discovered[u] == True
+                    q.append(u)
+        return False
+    
+    def encontra_caminho_errado(self,source,destination,visited=None):
+        if source == destination:
+            return [destination]
+        else:
+            visited = visited or set()
+            for new_source in self.c_lista_adj[source]:
+                if new_source not in visited:
+                    visited.add(new_source)
+                    sub_path = self.encontra_caminho(new_source,destination,visited)
+                    if sub_path is not None:
+                        return [source] + sub_path
+    
+    def eh_conexo(self):
+        dps =list()
+        self.busca_profundidade(1,dps)
+        if len(dps) == len(self.c_lista_adj):
+            return True
+        else:
+            return False
 
 
 #Classe para geração da janela 
@@ -222,6 +270,7 @@ class Tela:
             visitados = list()                                                                  #Cria lista com a ordem de visitas
             self.graph.busca_profundidade(int(self.entryBuscaProfundidade.get()),visitados)     #Chama o algoritmo de busca em profundidade
             print(visitados)                                                                    #Exibe os resultados
+            
         except Exception as e:
             messagebox.showerror("Erro", e)                                                     #Cria janela de erro
         
@@ -237,16 +286,19 @@ class Tela:
             messagebox.showerror("Erro",e)                                                      #Cria janela de erro
 
     def busca_caminho(self):
-        try:
-            if self.arquivo_importado == False:
-                raise Exception("Arquivo não importado")
-            visitados = list()
-            self.graph.encontra_caminho(int(self.entryBuscaCaminho_1.get()),
-                                        int(self.entryBuscaCaminho_2.get()),
-                                        visitados)
-            print(visitados)
-        except Exception as e:
-            messagebox.showerror("Erro",e)
+        #try:
+        #    if self.arquivo_importado == False:
+        #        raise Exception("Arquivo não importado")
+            
+        #    visited = [False]*(self.graph.get_num_vertices())
+            path = []
+            resultado = self.graph.encontra_caminho(int(self.entryBuscaCaminho_1.get()),
+                                        int(self.entryBuscaCaminho_2.get()),path)
+            print(resultado)
+                                        
+        #    print("É conexo: ", self.graph.eh_conexo())
+        #except Exception as e:
+        #    messagebox.showerror("Erro",e)
 
 janela  = Tk()
 Tela(janela)

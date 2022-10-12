@@ -56,13 +56,15 @@ class Grafo:
     def get_num_vertices(self):
         return int(self.c_num_vertices)
     
-    #Busca em Profundidade 
+    #Busca em Profundidade recursivo
+    #Função não utilizada no programa devido a falha com grafos grandes
     def busca_profundidade(self,vertice,visitados):
         visitados.append(vertice)                                               #Inicia pilha com vértice escolhido pelo usuário
         for vizinho in self.c_lista_adj[vertice]:
             if vizinho not in visitados:
                 self.busca_profundidade(vizinho,visitados)
 
+    #Busca em Profundidade iterativo
     def DFS(self,vertice,ordem=[]):
         visited = [False for i in range(self.c_num_vertices)]
         stack = []
@@ -80,8 +82,9 @@ class Grafo:
 
 
     #Busca em Largura Recursiva
+    #Função não usada no progama devido a falha com grafos grandes
     def busca_largura(self,vertice,visitados):
-        fila = [vertice]                                                        #Inicia fila com vértice escolhido pelo usuário
+        fila = [vertice]                                                        
         while fila:
             visitar = fila.pop(0)
             if visitar not in visitados:
@@ -104,6 +107,8 @@ class Grafo:
                 if visited[i] == False:
                     queue.append(i)
                     visited[i] = True
+    
+    #Função para busca de caminho entre vértices de forma interativa
     def encontrar_caminho_interativo(self,node1,node2,path=[]):
         
         if node1 == 0:
@@ -132,6 +137,7 @@ class Grafo:
                     stack.append(node)
         if len(path) + 2 == self.c_num_vertices:
             return False
+   
     #Busca caminho entre dois vértices 
     def encontrar_caminho(self,node1,node2,path=[]):
         if node1 == 0:
@@ -153,24 +159,25 @@ class Grafo:
                 self.encontrar_caminho(vizinho,node2,path)
         return path
     
+    #Testa se o grafo é conexo
     def eh_conexo(self):
         dps =list()
-        self.DFS(1,dps)
-        if len(dps) < self.c_num_vertices-1:
-            return False
-        return True    
+        self.DFS(1,dps)                                                         #Realiza uma busca em profundidade 
+        if len(dps) != self.c_num_vertices-1:                                   #Testa o comprimento do resultado da busca com o do grafo
+            return False                                                        #Se tamanho diferente não é conexo    
+        return True                                                             #Se tamanho igual é conexo
     
     def eh_ciclico(self,vertice,visitados=[]):
         fila = [vertice]                                                        #Inicia fila com vértice escolhido pelo usuário
-        while fila:
+        while fila: 
             visitar = fila.pop(0)
-            if visitar not in visitados:
+            if visitar not in visitados:                                        #Testa se existe vérticie visitado na fila
                 visitados.append(visitar)
                 vizinhos = list(self.get_sucessores(visitar))
                 fila.extend(vizinhos)
-            else:
-                return False
-        return True
+            else:                                                               #Retorna se haver vérticie visitado indicando ciclo
+                return True
+        return False                                                            #Retorna false se não haver nenhuma repetição
 
 class Janela:
     def __init__(self, master):
@@ -223,10 +230,14 @@ class Janela:
     
     #Método para importação do arquivo
     def carregar_arquivo(self):
-        self.caminho_arquivo = filedialog.askopenfilename()
-        self.LoadEntry.config(state="normal")
-        self.LoadEntry.delete(0,"end")
-        self.LoadEntry.insert(0,self.caminho_arquivo)
+        self.caminho_arquivo = filedialog.askopenfilename()                                     #Busca caminho do arquivo grafo
+        self.LoadEntry.config(state="normal")                                                   #Ativa o widget pra receber a string do diretório
+        self.LoadEntry.delete(0,"end")                                                          #Apaga o nome antigo
+        self.LoadEntry.insert(0,self.caminho_arquivo)                                           #Escreve o nome do diretório atual
+        self.ConexoEntry.delete(0,"end")                                                        #Apaga a saída de teste Conexo
+        self.ConexoEntry.config(state="disabled")                                               #Desabilita a saída de teste Conexo
+        self.CiclicoEntry.delete(0,"end")                                                       #Apaga a saída de teste Ciclico
+        self.CiclicoEntry.config(state="disabled")                                              #Desabilita a saída de teste Ciclico
 
         try:
             with open(self.caminho_arquivo,'r') as file_object:                                 #testa se o arquivo pode ser aberto
@@ -300,7 +311,7 @@ class Janela:
             nomeJanelaNova = "DFS vértice " + self.VerticeBuscaProfundidadeEntry.get()
             novaJanela.title(nomeJanelaNova)
             
-            busca = Label(novaJanela,text="Vértices Visitados Interativo")                                 #Exibe os vértices visitados 
+            busca = Label(novaJanela,text="Vértices Visitados Interativo")                      #Exibe os vértices visitados 
             busca.pack()
             resultado_busca = Label(novaJanela,wraplength=200,text=visitados)    
             resultado_busca.pack()
@@ -309,6 +320,7 @@ class Janela:
             
         except Exception as e:
             messagebox.showerror("Erro", e)                                                     #Cria janela de erro
+    
     # Metódo para chamar a busca em largura
     def busca_largura(self):
         try:
@@ -316,7 +328,7 @@ class Janela:
                 raise Exception("Arquivo não importado")                                        #Gera exceção quando grafo não for importado
             
             visitados = list()                                                                  #Gera lista com a ordem de visitas
-            self.graph.BFS(int(self.VerticeBuscaLarguraEntry.get()),visitados)                 #Chama o algoritmo de busca em largura
+            self.graph.BFS(int(self.VerticeBuscaLarguraEntry.get()),visitados)                  #Chama o algoritmo de busca em largura
             
             novaJanela = Tk()                                                                   #Cria uma janela para pesquisa solicitada
             novaJanela.geometry("400x250")
@@ -360,29 +372,29 @@ class Janela:
         
         try:
             if(self.arquivo_importado == False):
-                raise Exception("Arquivo não importado")     
+                raise Exception("Arquivo não importado")                                              #Gera exceção se grafo não importado
             
-            conexo = self.graph.eh_conexo()
-            ciclico = self.graph.eh_ciclico(1)
-            if conexo:
+            conexo = self.graph.eh_conexo()                                                           #Chama função que testa conectividade
+            ciclico = self.graph.eh_ciclico(1)                                                        #Chama função que testa ciclos 
+            if conexo:                                                                                #Saída se verdadeiro para conexo
                 self.ConexoEntry.config(state="normal")
                 self.ConexoEntry.delete(0,"end")
                 self.ConexoEntry.insert(0,"Sim")
-            else:
+            else:                                                                                     #Saída se falso para conexo
                 self.ConexoEntry.configse(self,state="normal")
                 self.ConexoEntry.delete(0,"end")
                 self.ConexoEntry.insert(0,"Não")
-            if ciclico:
+            if ciclico:                                                                               #Saída se verdadeiro para ciclos
                 self.CiclicoEntry.config(state="normal")
                 self.CiclicoEntry.delete(0,"end")
                 self.CiclicoEntry.insert(0,"Sim")
-            else:
+            else:                                                                                     #Saída se falso para ciclos
                 self.CiclicoEntry.config(state="normal")
                 self.CiclicoEntry.delete(0,"end")
                 self.CiclicoEntry.insert(0,"Não")
 
         except Exception as e:
-            messagebox.showerror("Erro",e)        
+            messagebox.showerror("Erro",e)                                                            #Produz janela de erro
         
 
 root = Tk()
